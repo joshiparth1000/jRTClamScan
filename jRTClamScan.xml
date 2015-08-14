@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<conf>
+	<mailserver>localhost</mailserver>
+	<mailfrom>postmaseter@localhost</mailfrom>
+	<mailto>root@localhost</mailto>
+	<foldermonitors>
+		<foldermonitor>
+			<folder>/root</folder>
+			<corepoolsize>5</corepoolsize>
+			<maxpoolsize>10</maxpoolsize>
+			<keepalive>10</keepalive>
+			<exclude></exclude>
+			<maxfilesize>20971520</maxfilesize>
+		</foldermonitor>
+	</foldermonitors>
+</conf>

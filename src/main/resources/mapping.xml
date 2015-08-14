@@ -1,0 +1,38 @@
+<mapping>
+	<class name="org.jRTClamScan.FolderMonitor">
+		<map-to xml="foldermonitor" />
+		<field name="folder" type="string">
+			<bind-xml name="folder" node="element" />
+		</field>
+		<field name="corepoolsize" type="integer">
+			<bind-xml name="corepoolsize" node="element" />
+		</field>
+		<field name="maxpoolsize" type="integer">
+			<bind-xml name="maxpoolsize" node="element" />
+		</field>
+		<field name="keepalive" type="long">
+			<bind-xml name="keepalive" node="element" />
+		</field>
+		<field name="exclude" type="string">
+			<bind-xml name="exclude" node="element" />
+		</field>
+		<field name="maxfilesize" type="long">
+			<bind-xml name="maxfilesize" node="element" />
+		</field>
+	</class>
+	<class name="org.jRTClamScan.Conf">
+		<map-to xml="conf" />
+		<field name="mailserver" type="string">
+			<bind-xml name="mailserver" node="element" />
+		</field>
+		<field name="mailfrom" type="string">
+			<bind-xml name="mailfrom" node="element" />
+		</field>
+		<field name="mailto" type="string">
+			<bind-xml name="mailto" node="element" />
+		</field>
+		<field name="foldermonitors" type="org.jRTClamScan.FolderMonitor" collection="arraylist" container="false">
+			<bind-xml name="foldermonitors" node="element" />
+		</field>
+	</class>
+</mapping>
