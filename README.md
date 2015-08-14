@@ -1,7 +1,7 @@
 jRTClamScan
 ============
 
-OBD-II Java API
+Java based real-time clamscan
 
 ## Build ##
 
