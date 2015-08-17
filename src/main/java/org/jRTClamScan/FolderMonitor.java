@@ -1,6 +1,10 @@
 package org.jRTClamScan;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -22,11 +26,13 @@ public class FolderMonitor implements Runnable {
 	private long keepalive=10;
 	private String exclude=null;
 	private long maxfilesize=20971520;
+	private int watchtimer=10;
 	
 	private Thread thread=null;
 	private FileAlterationMonitor monitor=null;
 	private static final Logger logger=LogManager.getLogger(FolderMonitor.class);
 	private ThreadPoolExecutor executorPool=null;
+	private static HashMap<File,Thread> watchedfiles=new HashMap<File,Thread>();
 	private boolean isRunning=false;
 	
 	public String getFolder() {
@@ -77,6 +83,14 @@ public class FolderMonitor implements Runnable {
 		this.maxfilesize=maxfilesize;
 	}
 	
+	public int getWatchtimer() {
+		return watchtimer;
+	}
+	
+	public void setWatchtimer(int watchtimer) {
+		this.watchtimer=watchtimer;
+	}
+	
 	public boolean getIsrunning() {
 		return this.isRunning;
 	}
@@ -117,6 +131,52 @@ public class FolderMonitor implements Runnable {
 			}
 		});
 	}
+	
+	private boolean wathchingFile(File scanfile) {
+		boolean ret=false;
+		
+		if(watchedfiles.isEmpty())
+			ret=false;
+		else {
+			Set<Entry<File, Thread>> set=watchedfiles.entrySet();
+			Iterator<Entry<File, Thread>> iterator=set.iterator();
+			while(iterator.hasNext()) {
+				Entry<File, Thread> entry=(Entry<File,Thread>)iterator.next();
+				File file=(File)entry.getKey();
+				if(file.getAbsolutePath().equals(scanfile.getAbsolutePath())) {
+					ret=true;
+					break;
+				}
+			}
+		}
+		
+		if(ret==true)
+			logger.debug("Watcher running on file: "+scanfile.getAbsolutePath());
+		else
+			logger.debug("Watcher not running on file: "+scanfile.getAbsolutePath());
+		
+		return ret;
+	}
+	
+	private Thread getWatchThread(File scanfile) {
+		Thread scanthread=null;
+		Set<Entry<File, Thread>> set=watchedfiles.entrySet();
+		Iterator<Entry<File, Thread>> iterator=set.iterator();
+		watchedfiles=new HashMap<File,Thread>();
+		while(iterator.hasNext()) {
+			Entry<File, Thread> entry=(Entry<File,Thread>)iterator.next();
+			File file=(File)entry.getKey();
+			if(file.getAbsolutePath().equals(scanfile.getAbsolutePath())) {
+				scanthread=(Thread)entry.getValue();
+			}
+			else
+				watchedfiles.put(entry.getKey(), entry.getValue());
+		}
+		
+		logger.debug("Watcher thread found for file: "+scanfile.getAbsolutePath());
+		
+		return scanthread;
+	}
 
 	public void run() {
 		this.isRunning=true;
@@ -129,14 +189,39 @@ public class FolderMonitor implements Runnable {
 			public void onStart(FileAlterationObserver observer) {}
 			public void onStop(FileAlterationObserver observer) {}
 			
-			private void processfile(File file) {
-				if(exclude!=null && file.getName().matches(exclude))
-					logger.info("File matches exclusion regex: "+file.getAbsolutePath());
+			private void processfile(final File file) {
+				if(file.length()==0)
+					logger.debug("File is empty: "+file.getAbsolutePath());
 				else
-					if(file.length()>maxfilesize)
-						logger.info("File bigger than max file size allowed: "+file.getAbsolutePath());
+					if(exclude!=null && file.getName().matches(exclude))
+						logger.info("File matches exclusion regex: "+file.getAbsolutePath());
 					else
-						executorPool.execute(new ClamScan(file));
+						if(file.length()>maxfilesize)
+							logger.info("File bigger than max file size allowed: "+file.getAbsolutePath());
+						else {
+							if(wathchingFile(file)) {
+								Thread scanthread=getWatchThread(file);
+								scanthread.interrupt();
+							}
+							
+							Thread scanthread=new Thread(new Runnable() {
+								
+								@Override
+								public void run() {
+									try {
+										logger.debug("Started watcher on file: "+file.getAbsolutePath());
+										Thread.sleep(watchtimer*1000);
+										logger.debug("Stopped watcher on file: "+file.getAbsolutePath());
+										executorPool.execute(new ClamScan(file));
+									} catch (InterruptedException e) {
+										logger.debug("Resetting Watcher on file: "+file.getAbsolutePath());
+									}
+								}
+							});
+							scanthread.start();
+							
+							watchedfiles.put(file, scanthread);
+						}
 			}
 			
 			public void onFileCreate(File file) {

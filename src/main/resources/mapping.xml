@@ -19,6 +19,9 @@
 		<field name="maxfilesize" type="long">
 			<bind-xml name="maxfilesize" node="element" />
 		</field>
+		<field name="watchtimer" type="integer">
+			<bind-xml name="watchtimer" node="element" />
+		</field>
 	</class>
 	<class name="org.jRTClamScan.Conf">
 		<map-to xml="conf" />

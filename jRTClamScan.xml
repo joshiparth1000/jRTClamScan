@@ -11,6 +11,7 @@
 			<keepalive>10</keepalive>
 			<exclude></exclude>
 			<maxfilesize>20971520</maxfilesize>
+			<changetimer>10</changetimer>
 		</foldermonitor>
 	</foldermonitors>
 </conf>
